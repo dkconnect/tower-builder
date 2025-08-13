@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+	<meta charset="UTF-8">
+	<title>Tower Builder</title>
+	<link rel="stylesheet" href="./style.css">
+
+</head>
+
+<body>
+	<meta name="viewport" content="width=device-width,user-scalable=no">
+
+	<div id="container">
+		<h1 id="title">Tower Builder</h1>
+		<div id="game"></div>
+		<div id="score">0</div>
+		<div class="game-over">
+			<h2>Game Over</h2>
+			<p>Your Score: <span id="final-score">0</span></p>
+			<p id="new-high-score" class="hidden">New High Score!</p>
+			<p>High Score: <span id="high-score">0</span></p>
+			<button id="restart-button">Restart Game</button>
+		</div>
+		<div class="game-ready">
+			<div id="start-button">Start Building Blocks</div>
+			<div></div>
+		</div>
+	</div>
+	<script src='https://cdnjs.cloudflare.com/ajax/libs/three.js/r83/three.min.js'></script>
+	<script src='https://cdnjs.cloudflare.com/ajax/libs/gsap/latest/TweenMax.min.js'></script>
+	<script src="./script.js"></script>
+
+</body>
+
+</html>
