@@ -57,6 +57,43 @@ body {
 	opacity: 0;
 }
 
+/* New styles for the instructions box */
+.instructions-box {
+	position: absolute;
+	top: 20px;
+	left: 20px;
+	background-color: rgba(26, 26, 46, 0.7);
+	padding: 15px;
+	border: 2px solid #53d9e0;
+	color: #fff;
+	text-shadow: 0 0 5px #53d9e0;
+	font-family: "Roboto Mono", monospace;
+	z-index: 10;
+	max-width: 250px;
+	font-size: 14px;
+	transition: opacity 0.5s ease;
+	pointer-events: none;
+}
+
+.instructions-box h2 {
+	margin-top: 0;
+	font-family: "Orbitron", sans-serif;
+	color: #e94560;
+	text-shadow: 0 0 5px #e94560;
+}
+
+/* New styles for the credit text */
+.credit-box {
+	position: absolute;
+	top: 20px;
+	right: 20px;
+	color: #fff;
+	text-shadow: 0 0 5px #53d9e0;
+	font-family: "Roboto Mono", monospace;
+	font-size: 14px;
+	z-index: 10;
+}
+
 #container .game-over {
 	position: absolute;
 	top: 0;
