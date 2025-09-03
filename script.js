@@ -1,449 +1,579 @@
 "use strict";
 console.clear();
+
 class Stage {
-	constructor() {
-		this.render = function () {
-			this.renderer.render(this.scene, this.camera);
-		};
-		this.add = function (elem) {
-			this.scene.add(elem);
-		};
-		this.remove = function (elem) {
-			this.scene.remove(elem);
-		};
-		this.container = document.getElementById("game");
+    constructor() {
+        this.render = function () {
+            this.renderer.render(this.scene, this.camera);
+        };
+        this.add = function (elem) {
+            this.scene.add(elem);
+        };
+        this.remove = function (elem) {
+            this.scene.remove(elem);
+        };
+        this.container = document.getElementById("game");
 
-		this.renderer = new THREE.WebGLRenderer({
-			antialias: true,
-			alpha: false,
-		});
-		this.renderer.setSize(window.innerWidth, window.innerHeight);
-		this.renderer.setClearColor("#1a1a2e", 1);
-		this.container.appendChild(this.renderer.domElement);
+        this.renderer = new THREE.WebGLRenderer({
+            antialias: true,
+            alpha: false,
+        });
+        this.renderer.setSize(window.innerWidth, window.innerHeight);
+        this.renderer.setClearColor("#1a1a2e", 1);
+        this.container.appendChild(this.renderer.domElement);
 
-		this.scene = new THREE.Scene();
+        this.scene = new THREE.Scene();
 
-		let aspect = window.innerWidth / window.innerHeight;
-		let d = 20;
-		this.camera = new THREE.OrthographicCamera(
-			-d * aspect,
-			d * aspect,
-			d,
-			-d,
-			-100,
-			1000
-		);
-		this.camera.position.x = 2;
-		this.camera.position.y = 2;
-		this.camera.position.z = 2;
-		this.camera.lookAt(new THREE.Vector3(0, 0, 0));
+        let aspect = window.innerWidth / window.innerHeight;
+        let d = 20;
+        this.camera = new THREE.OrthographicCamera(
+            -d * aspect,
+            d * aspect,
+            d,
+            -d,
+            -100,
+            1000
+        );
+        this.camera.position.x = 2;
+        this.camera.position.y = 2;
+        this.camera.position.z = 2;
+        this.camera.lookAt(new THREE.Vector3(0, 0, 0));
 
-		this.light = new THREE.DirectionalLight(0xffffff, 0.5);
-		this.light.position.set(0, 499, 0);
-		this.scene.add(this.light);
-		this.softLight = new THREE.AmbientLight(0xffffff, 0.4);
-		this.scene.add(this.softLight);
-		window.addEventListener("resize", () => this.onResize());
-		this.onResize();
-	}
+        this.light = new THREE.DirectionalLight(0xffffff, 0.5);
+        this.light.position.set(0, 499, 0);
+        this.scene.add(this.light);
+        this.softLight = new THREE.AmbientLight(0xffffff, 0.4);
+        this.scene.add(this.softLight);
+        window.addEventListener("resize", () => this.onResize());
+        this.onResize();
+    }
 
-	setCamera(y, speed = 0.3) {
-		TweenLite.to(this.camera.position, speed, {
-			y: y + 4,
-			ease: Power1.easeInOut,
-		});
-		TweenLite.to(this.camera.lookAt, speed, {
-			y: y,
-			ease: Power1.easeInOut
-		});
-	}
+    setCamera(y, speed = 0.3) {
+        TweenLite.to(this.camera.position, speed, {
+            y: y + 4,
+            ease: Power1.easeInOut,
+        });
+        TweenLite.to(this.camera.lookAt, speed, {
+            y: y,
+            ease: Power1.easeInOut
+        });
+    }
 
-	onResize() {
-		let viewSize = 30;
-		this.renderer.setSize(window.innerWidth, window.innerHeight);
-		this.camera.left = window.innerWidth / -viewSize;
-		this.camera.right = window.innerWidth / viewSize;
-		this.camera.top = window.innerHeight / viewSize;
-		this.camera.bottom = window.innerHeight / -viewSize;
-		this.camera.updateProjectionMatrix();
-	}
+    onResize() {
+        let viewSize = 30;
+        this.renderer.setSize(window.innerWidth, window.innerHeight);
+        this.camera.left = window.innerWidth / -viewSize;
+        this.camera.right = window.innerWidth / viewSize;
+        this.camera.top = window.innerHeight / viewSize;
+        this.camera.bottom = window.innerHeight / -viewSize;
+        this.camera.updateProjectionMatrix();
+    }
 }
 
 class Block {
-	constructor(block) {
-		this.STATES = {
-			ACTIVE: "active",
-			STOPPED: "stopped",
-			MISSED: "missed"
-		};
-		this.MOVE_AMOUNT = 12;
-		this.dimension = {
-			width: 0,
-			height: 0,
-			depth: 0
-		};
-		this.position = {
-			x: 0,
-			y: 0,
-			z: 0
-		};
-		this.targetBlock = block;
-		this.index = (this.targetBlock ? this.targetBlock.index : 0) + 1;
-		this.workingPlane = this.index % 2 ? "x" : "z";
-		this.workingDimension = this.index % 2 ? "width" : "depth";
+    constructor(block) {
+        this.STATES = {
+            ACTIVE: "active",
+            STOPPED: "stopped",
+            MISSED: "missed"
+        };
+        this.MOVE_AMOUNT = 12;
+        this.dimension = {
+            width: 0,
+            height: 0,
+            depth: 0
+        };
+        this.position = {
+            x: 0,
+            y: 0,
+            z: 0
+        };
+        this.targetBlock = block;
+        this.index = (this.targetBlock ? this.targetBlock.index : 0) + 1;
+        this.workingPlane = this.index % 2 ? "x" : "z";
+        this.workingDimension = this.index % 2 ? "width" : "depth";
 
-		this.dimension.width = this.targetBlock ?
-			this.targetBlock.dimension.width :
-			10;
-		this.dimension.height = this.targetBlock ?
-			this.targetBlock.dimension.height :
-			2;
-		this.dimension.depth = this.targetBlock ?
-			this.targetBlock.dimension.depth :
-			10;
-		this.position.x = this.targetBlock ? this.targetBlock.position.x : 0;
-		this.position.y = this.dimension.height * this.index;
-		this.position.z = this.targetBlock ? this.targetBlock.position.z : 0;
+        this.dimension.width = this.targetBlock ?
+            this.targetBlock.dimension.width :
+            10;
+        this.dimension.height = this.targetBlock ?
+            this.targetBlock.dimension.height :
+            2;
+        this.dimension.depth = this.targetBlock ?
+            this.targetBlock.dimension.depth :
+            10;
+        this.position.x = this.targetBlock ? this.targetBlock.position.x : 0;
+        this.position.y = this.dimension.height * this.index;
+        this.position.z = this.targetBlock ? this.targetBlock.position.z : 0;
 
-		let palette = [0x53d9e0, 0xef476f, 0xffa500, 0x06d6a0, 0x118ab2];
+        let palette = [0x53d9e0, 0xef476f, 0xffa500, 0x06d6a0, 0x118ab2];
 
-		if (!this.targetBlock) {
-			this.color = 0x2e2e4e;
-		} else {
-			this.color = palette[(this.index - 1) % palette.length];
-		}
+        if (!this.targetBlock) {
+            this.color = 0x2e2e4e;
+        } else {
+            this.color = palette[(this.index - 1) % palette.length];
+        }
 
-		this.state = this.index > 1 ? this.STATES.ACTIVE : this.STATES.STOPPED;
+        this.state = this.index > 1 ? this.STATES.ACTIVE : this.STATES.STOPPED;
 
-		this.speed = -0.1 - this.index * 0.005;
-		if (this.speed < -4) this.speed = -4;
-		this.direction = this.speed;
+        this.speed = -0.1 - this.index * 0.005;
+        if (this.speed < -4) this.speed = -4;
+        this.direction = this.speed;
 
-		let geometry = new THREE.BoxGeometry(
-			this.dimension.width,
-			this.dimension.height,
-			this.dimension.depth
-		);
-		geometry.applyMatrix(
-			new THREE.Matrix4().makeTranslation(
-				this.dimension.width / 2,
-				this.dimension.height / 2,
-				this.dimension.depth / 2
-			)
-		);
-		this.material = new THREE.MeshToonMaterial({
-			color: this.color,
-			shading: THREE.FlatShading,
-		});
-		this.mesh = new THREE.Mesh(geometry, this.material);
-		this.mesh.position.set(
-			this.position.x,
-			this.position.y + (this.state == this.STATES.ACTIVE ? 0 : 0),
-			this.position.z
-		);
-		if (this.state == this.STATES.ACTIVE) {
-			this.position[this.workingPlane] =
-				Math.random() > 0.5 ? -this.MOVE_AMOUNT : this.MOVE_AMOUNT;
-		}
-	}
+        let geometry = new THREE.BoxGeometry(
+            this.dimension.width,
+            this.dimension.height,
+            this.dimension.depth
+        );
+        geometry.applyMatrix(
+            new THREE.Matrix4().makeTranslation(
+                this.dimension.width / 2,
+                this.dimension.height / 2,
+                this.dimension.depth / 2
+            )
+        );
+        this.material = new THREE.MeshToonMaterial({
+            color: this.color,
+            shading: THREE.FlatShading,
+        });
+        this.mesh = new THREE.Mesh(geometry, this.material);
+        this.mesh.position.set(
+            this.position.x,
+            this.position.y + (this.state == this.STATES.ACTIVE ? 0 : 0),
+            this.position.z
+        );
+        if (this.state == this.STATES.ACTIVE) {
+            this.position[this.workingPlane] =
+                Math.random() > 0.5 ? -this.MOVE_AMOUNT : this.MOVE_AMOUNT;
+        }
+    }
 
-	reverseDirection() {
-		this.direction = this.direction > 0 ? this.speed : Math.abs(this.speed);
-	}
+    reverseDirection() {
+        this.direction = this.direction > 0 ? this.speed : Math.abs(this.speed);
+    }
 
-	place() {
-		this.state = this.STATES.STOPPED;
-		let overlap =
-			this.targetBlock.dimension[this.workingDimension] -
-			Math.abs(
-				this.position[this.workingPlane] -
-				this.targetBlock.position[this.workingPlane]
-			);
-		let blocksToReturn = {
-			plane: this.workingPlane,
-			direction: this.direction,
-		};
-		if (this.dimension[this.workingDimension] - overlap < 0.3) {
-			overlap = this.dimension[this.workingDimension];
-			blocksToReturn.bonus = true;
-			this.position.x = this.targetBlock.position.x;
-			this.position.z = this.targetBlock.position.z;
-			this.dimension.width = this.targetBlock.dimension.width;
-			this.dimension.depth = this.targetBlock.dimension.depth;
-		}
-		if (overlap > 0) {
-			let choppedDimensions = {
-				width: this.dimension.width,
-				height: this.dimension.height,
-				depth: this.dimension.depth,
-			};
-			choppedDimensions[this.workingDimension] -= overlap;
-			this.dimension[this.workingDimension] = overlap;
-			let placedGeometry = new THREE.BoxGeometry(
-				this.dimension.width,
-				this.dimension.height,
-				this.dimension.depth
-			);
-			placedGeometry.applyMatrix(
-				new THREE.Matrix4().makeTranslation(
-					this.dimension.width / 2,
-					this.dimension.height / 2,
-					this.dimension.depth / 2
-				)
-			);
-			let placedMesh = new THREE.Mesh(placedGeometry, this.material);
-			let choppedGeometry = new THREE.BoxGeometry(
-				choppedDimensions.width,
-				choppedDimensions.height,
-				choppedDimensions.depth
-			);
-			choppedGeometry.applyMatrix(
-				new THREE.Matrix4().makeTranslation(
-					choppedDimensions.width / 2,
-					choppedDimensions.height / 2,
-					choppedDimensions.depth / 2
-				)
-			);
-			let choppedMesh = new THREE.Mesh(choppedGeometry, this.material);
-			let choppedPosition = {
-				x: this.position.x,
-				y: this.position.y,
-				z: this.position.z,
-			};
-			if (
-				this.position[this.workingPlane] <
-				this.targetBlock.position[this.workingPlane]
-			) {
-				this.position[this.workingPlane] =
-					this.targetBlock.position[this.workingPlane];
-			} else {
-				choppedPosition[this.workingPlane] += overlap;
-			}
-			placedMesh.position.set(
-				this.position.x,
-				this.position.y,
-				this.position.z
-			);
-			choppedMesh.position.set(
-				choppedPosition.x,
-				choppedPosition.y,
-				choppedPosition.z
-			);
-			blocksToReturn.placed = placedMesh;
-			if (!blocksToReturn.bonus) blocksToReturn.chopped = choppedMesh;
-		} else {
-			this.state = this.STATES.MISSED;
-		}
-		this.dimension[this.workingDimension] = overlap;
-		return blocksToReturn;
-	}
+    place() {
+        this.state = this.STATES.STOPPED;
+        let overlap =
+            this.targetBlock.dimension[this.workingDimension] -
+            Math.abs(
+                this.position[this.workingPlane] -
+                this.targetBlock.position[this.workingPlane]
+            );
+        let blocksToReturn = {
+            plane: this.workingPlane,
+            direction: this.direction,
+        };
+        if (this.dimension[this.workingDimension] - overlap < 0.3) {
+            overlap = this.dimension[this.workingDimension];
+            blocksToReturn.bonus = true;
+            this.position.x = this.targetBlock.position.x;
+            this.position.z = this.targetBlock.position.z;
+            this.dimension.width = this.targetBlock.dimension.width;
+            this.dimension.depth = this.targetBlock.dimension.depth;
+        }
+        if (overlap > 0) {
+            let choppedDimensions = {
+                width: this.dimension.width,
+                height: this.dimension.height,
+                depth: this.dimension.depth,
+            };
+            choppedDimensions[this.workingDimension] -= overlap;
+            this.dimension[this.workingDimension] = overlap;
+            let placedGeometry = new THREE.BoxGeometry(
+                this.dimension.width,
+                this.dimension.height,
+                this.dimension.depth
+            );
+            placedGeometry.applyMatrix(
+                new THREE.Matrix4().makeTranslation(
+                    this.dimension.width / 2,
+                    this.dimension.height / 2,
+                    this.dimension.depth / 2
+                )
+            );
+            let placedMesh = new THREE.Mesh(placedGeometry, this.material);
+            let choppedGeometry = new THREE.BoxGeometry(
+                choppedDimensions.width,
+                choppedDimensions.height,
+                choppedDimensions.depth
+            );
+            choppedGeometry.applyMatrix(
+                new THREE.Matrix4().makeTranslation(
+                    choppedDimensions.width / 2,
+                    choppedDimensions.height / 2,
+                    choppedDimensions.depth / 2
+                )
+            );
+            let choppedMesh = new THREE.Mesh(choppedGeometry, this.material);
+            let choppedPosition = {
+                x: this.position.x,
+                y: this.position.y,
+                z: this.position.z,
+            };
+            if (
+                this.position[this.workingPlane] <
+                this.targetBlock.position[this.workingPlane]
+            ) {
+                this.position[this.workingPlane] =
+                    this.targetBlock.position[this.workingPlane];
+            } else {
+                choppedPosition[this.workingPlane] += overlap;
+            }
+            placedMesh.position.set(
+                this.position.x,
+                this.position.y,
+                this.position.z
+            );
+            choppedMesh.position.set(
+                choppedPosition.x,
+                choppedPosition.y,
+                choppedPosition.z
+            );
+            blocksToReturn.placed = placedMesh;
+            if (!blocksToReturn.bonus) blocksToReturn.chopped = choppedMesh;
+        } else {
+            this.state = this.STATES.MISSED;
+        }
+        this.dimension[this.workingDimension] = overlap;
+        return blocksToReturn;
+    }
 
-	tick() {
-		if (this.state == this.STATES.ACTIVE) {
-			let value = this.position[this.workingPlane];
-			if (value > this.MOVE_AMOUNT || value < -this.MOVE_AMOUNT)
-				this.reverseDirection();
-			this.position[this.workingPlane] += this.direction;
-			this.mesh.position[this.workingPlane] = this.position[this.workingPlane];
-		}
-	}
+    tick() {
+        if (this.state == this.STATES.ACTIVE) {
+            let value = this.position[this.workingPlane];
+            if (value > this.MOVE_AMOUNT || value < -this.MOVE_AMOUNT)
+                this.reverseDirection();
+            this.position[this.workingPlane] += this.direction;
+            this.mesh.position[this.workingPlane] = this.position[this.workingPlane];
+        }
+    }
+}
+
+class SoundManager {
+    constructor() {
+        this.audioContext = new(window.AudioContext || window.webkitAudioContext)();
+        this.sounds = {
+            place: this.createSoundSource(0.2, 440, 0.1, 0.05),
+            chop: this.createSoundSource(0.2, 220, 0.2, 0.1),
+            perfect: this.createSoundSource(0.3, 880, 0.1, 0.05),
+            start: this.createSoundSource(0.4, 550, 0.3, 0.1),
+            gameOver: this.createSoundSource(0.5, 110, 0.5, 0.2),
+        };
+    }
+
+    createSoundSource(duration, frequency, attack, release) {
+        const oscillator = this.audioContext.createOscillator();
+        const gainNode = this.audioContext.createGain();
+
+        oscillator.type = 'square';
+        oscillator.frequency.value = frequency;
+
+        gainNode.gain.setValueAtTime(0, this.audioContext.currentTime);
+        gainNode.gain.linearRampToValueAtTime(0.5, this.audioContext.currentTime + attack);
+        gainNode.gain.linearRampToValueAtTime(0, this.audioContext.currentTime + duration - release);
+
+        oscillator.connect(gainNode);
+        gainNode.connect(this.audioContext.destination);
+
+        return {
+            oscillator,
+            gainNode
+        };
+    }
+
+    play(soundName) {
+        if (!this.sounds[soundName]) return;
+        try {
+            const {
+                oscillator
+            } = this.sounds[soundName];
+            const newOscillator = this.audioContext.createOscillator();
+            const newGainNode = this.audioContext.createGain();
+            newOscillator.type = oscillator.type;
+            newOscillator.frequency.value = oscillator.frequency.value;
+            newGainNode.gain.setValueAtTime(0, this.audioContext.currentTime);
+            newGainNode.gain.linearRampToValueAtTime(0.5, this.audioContext.currentTime + 0.01);
+            newGainNode.gain.linearRampToValueAtTime(0, this.audioContext.currentTime + 0.3);
+            newOscillator.connect(newGainNode);
+            newGainNode.connect(this.audioContext.destination);
+            newOscillator.start();
+            newOscillator.stop(this.audioContext.currentTime + 0.3);
+        } catch (e) {
+            console.warn("Could not play sound:", e);
+        }
+    }
 }
 
 class Game {
-	constructor() {
-		this.STATES = {
-			LOADING: "loading",
-			PLAYING: "playing",
-			READY: "ready",
-			ENDED: "ended",
-			RESETTING: "resetting",
-		};
-		this.blocks = [];
-		this.state = this.STATES.LOADING;
-		this.stage = new Stage();
-		this.mainContainer = document.getElementById("container");
-		this.scoreContainer = document.getElementById("score");
-		this.startButton = document.getElementById("start-button");
-		this.restartButton = document.getElementById("restart-button");
-		this.finalScoreContainer = document.getElementById("final-score");
-		this.highScoreContainer = document.getElementById("high-score");
-		this.newHighScoreElement = document.getElementById("new-high-score");
-		this.instructions = document.getElementById("instructions");
+    constructor() {
+        this.STATES = {
+            LOADING: "loading",
+            PLAYING: "playing",
+            READY: "ready",
+            ENDED: "ended",
+            RESETTING: "resetting",
+        };
+        this.blocks = [];
+        this.state = this.STATES.LOADING;
+        this.stage = new Stage();
+        this.soundManager = new SoundManager();
+        this.comboCount = 0;
+        this.comboDisplay = document.getElementById('combo-display');
 
-		this.scoreContainer.innerHTML = "0";
-		this.newBlocks = new THREE.Group();
-		this.placedBlocks = new THREE.Group();
-		this.choppedBlocks = new THREE.Group();
-		this.stage.add(this.newBlocks);
-		this.stage.add(this.placedBlocks);
-		this.stage.add(this.choppedBlocks);
+        this.mainContainer = document.getElementById("container");
+        this.scoreContainer = document.getElementById("score");
+        this.startButton = document.getElementById("start-button");
+        this.restartButton = document.getElementById("restart-button");
+        this.finalScoreContainer = document.getElementById("final-score");
+        this.highScoreContainer = document.getElementById("high-score");
+        this.newHighScoreElement = document.getElementById("new-high-score");
+        this.instructions = document.getElementById("instructions");
 
-		this.addBlock();
-		this.tick();
-		this.updateState(this.STATES.READY);
+        this.scoreContainer.innerHTML = "0";
+        this.newBlocks = new THREE.Group();
+        this.placedBlocks = new THREE.Group();
+        this.choppedBlocks = new THREE.Group();
+        this.stage.add(this.newBlocks);
+        this.stage.add(this.placedBlocks);
+        this.stage.add(this.choppedBlocks);
 
-		this.highScore = localStorage.getItem('highScore') || 0;
-		this.highScoreContainer.innerText = this.highScore;
+        this.addBlock();
+        this.tick();
+        this.updateState(this.STATES.READY);
 
-		document.addEventListener("keydown", (e) => {
-			if (e.keyCode == 32) this.onAction();
-		});
-		document.addEventListener("click", (e) => {
-			this.onAction();
-		});
-		document.addEventListener("touchstart", (e) => {
-			e.preventDefault();
-			this.onAction();
-		});
+        this.highScore = localStorage.getItem('highScore') || 0;
+        this.highScoreContainer.innerText = this.highScore;
 
-		this.restartButton.addEventListener("click", () => {
-			this.restartGame();
-		});
-	}
+        document.addEventListener("keydown", (e) => {
+            if (e.keyCode == 32) this.onAction();
+        });
+        document.addEventListener("click", (e) => {
+            this.onAction();
+        });
+        document.addEventListener("touchstart", (e) => {
+            e.preventDefault();
+            this.onAction();
+        });
 
-	updateState(newState) {
-		for (let key in this.STATES)
-			this.mainContainer.classList.remove(this.STATES[key]);
-		this.mainContainer.classList.add(newState);
-		this.state = newState;
-	}
+        this.restartButton.addEventListener("click", () => {
+            this.restartGame();
+        });
+    }
 
-	onAction() {
-		switch (this.state) {
-			case this.STATES.READY:
-				this.startGame();
-				break;
-			case this.STATES.PLAYING:
-				this.placeBlock();
-				break;
-			case this.STATES.ENDED:
-				// Handled by restartButton now
-				break;
-		}
-	}
+    updateState(newState) {
+        for (let key in this.STATES)
+            this.mainContainer.classList.remove(this.STATES[key]);
+        this.mainContainer.classList.add(newState);
+        this.state = newState;
+    }
 
-	startGame() {
-		if (this.state != this.STATES.PLAYING) {
-			this.scoreContainer.innerHTML = "0";
-			this.updateState(this.STATES.PLAYING);
-			this.addBlock();
-		}
-	}
+    onAction() {
+        switch (this.state) {
+            case this.STATES.READY:
+                this.startGame();
+                break;
+            case this.STATES.PLAYING:
+                this.placeBlock();
+                break;
+            case this.STATES.ENDED:
+                break;
+        }
+    }
 
-	restartGame() {
-		this.updateState(this.STATES.RESETTING);
-		let oldBlocks = this.placedBlocks.children;
-		let removeSpeed = 0.2;
-		let delayAmount = 0.02;
-		for (let i = 0; i < oldBlocks.length; i++) {
-			TweenLite.to(oldBlocks[i].scale, removeSpeed, {
-				x: 0,
-				y: 0,
-				z: 0,
-				delay: (oldBlocks.length - i) * delayAmount,
-				ease: Power1.easeIn,
-				onComplete: () => this.placedBlocks.remove(oldBlocks[i]),
-			});
-			TweenLite.to(oldBlocks[i].rotation, removeSpeed, {
-				y: 0.5,
-				delay: (oldBlocks.length - i) * delayAmount,
-				ease: Power1.easeIn,
-			});
-		}
-		let cameraMoveSpeed = removeSpeed * 2 + oldBlocks.length * delayAmount;
-		this.stage.setCamera(2, cameraMoveSpeed);
-		let countdown = {
-			value: this.blocks.length - 1
-		};
-		TweenLite.to(countdown, cameraMoveSpeed, {
-			value: 0,
-			onUpdate: () => {
-				this.scoreContainer.innerHTML = String(Math.round(countdown.value));
-			},
-		});
-		this.blocks = this.blocks.slice(0, 1);
-		setTimeout(() => {
-			this.startGame();
-		}, cameraMoveSpeed * 1000);
-	}
+    startGame() {
+        if (this.state != this.STATES.PLAYING) {
+            this.scoreContainer.innerHTML = "0";
+            this.updateState(this.STATES.PLAYING);
+            this.addBlock();
+            this.soundManager.play('start');
+        }
+    }
 
-	placeBlock() {
-		let currentBlock = this.blocks[this.blocks.length - 1];
-		let newBlocks = currentBlock.place();
-		this.newBlocks.remove(currentBlock.mesh);
-		if (newBlocks.placed) this.placedBlocks.add(newBlocks.placed);
-		if (newBlocks.chopped) {
-			this.choppedBlocks.add(newBlocks.chopped);
-			let positionParams = {
-				y: "-=30",
-				ease: Power1.easeIn,
-				onComplete: () => this.choppedBlocks.remove(newBlocks.chopped),
-			};
-			let rotateRandomness = 10;
-			let rotationParams = {
-				delay: 0.05,
-				x: newBlocks.plane == "z" ?
-					Math.random() * rotateRandomness - rotateRandomness / 2 :
-					0.1,
-				z: newBlocks.plane == "x" ?
-					Math.random() * rotateRandomness - rotateRandomness / 2 :
-					0.1,
-				y: Math.random() * 0.1,
-			};
-			if (
-				newBlocks.chopped.position[newBlocks.plane] >
-				newBlocks.placed.position[newBlocks.plane]
-			) {
-				positionParams[newBlocks.plane] =
-					"+=" + 40 * Math.abs(newBlocks.direction);
-			} else {
-				positionParams[newBlocks.plane] =
-					"-=" + 40 * Math.abs(newBlocks.direction);
-			}
-			TweenLite.to(newBlocks.chopped.position, 1, positionParams);
-			TweenLite.to(newBlocks.chopped.rotation, 1, rotationParams);
-		}
-		this.addBlock();
-	}
+    restartGame() {
+        this.updateState(this.STATES.RESETTING);
+        let oldBlocks = this.placedBlocks.children;
+        let removeSpeed = 0.2;
+        let delayAmount = 0.02;
+        for (let i = 0; i < oldBlocks.length; i++) {
+            TweenLite.to(oldBlocks[i].scale, removeSpeed, {
+                x: 0,
+                y: 0,
+                z: 0,
+                delay: (oldBlocks.length - i) * delayAmount,
+                ease: Power1.easeIn,
+                onComplete: () => this.placedBlocks.remove(oldBlocks[i]),
+            });
+            TweenLite.to(oldBlocks[i].rotation, removeSpeed, {
+                y: 0.5,
+                delay: (oldBlocks.length - i) * delayAmount,
+                ease: Power1.easeIn,
+            });
+        }
+        let cameraMoveSpeed = removeSpeed * 2 + oldBlocks.length * delayAmount;
+        this.stage.setCamera(2, cameraMoveSpeed);
+        let countdown = {
+            value: this.blocks.length - 1
+        };
+        TweenLite.to(countdown, cameraMoveSpeed, {
+            value: 0,
+            onUpdate: () => {
+                this.scoreContainer.innerHTML = String(Math.round(countdown.value));
+            },
+        });
+        this.blocks = this.blocks.slice(0, 1);
+        setTimeout(() => {
+            this.startGame();
+        }, cameraMoveSpeed * 1000);
+    }
 
-	addBlock() {
-		let lastBlock = this.blocks[this.blocks.length - 1];
-		if (lastBlock && lastBlock.state == lastBlock.STATES.MISSED) {
-			return this.endGame();
-		}
-		let score = this.blocks.length - 1;
-		this.scoreContainer.innerHTML = String(score);
-		let newKidOnTheBlock = new Block(lastBlock);
-		this.newBlocks.add(newKidOnTheBlock.mesh);
-		this.blocks.push(newKidOnTheBlock);
-		this.stage.setCamera(this.blocks.length * 2);
-		if (this.blocks.length >= 5) this.instructions.classList.add("hidden");
-	}
+    placeBlock() {
+        let currentBlock = this.blocks[this.blocks.length - 1];
+        let newBlocks = currentBlock.place();
+        this.newBlocks.remove(currentBlock.mesh);
+        if (newBlocks.placed) this.placedBlocks.add(newBlocks.placed);
+        if (newBlocks.chopped) {
+            this.choppedBlocks.add(newBlocks.chopped);
+            this.soundManager.play('chop');
+            let positionParams = {
+                y: "-=30",
+                ease: Power1.easeIn,
+                onComplete: () => this.choppedBlocks.remove(newBlocks.chopped),
+            };
+            let rotateRandomness = 10;
+            let rotationParams = {
+                delay: 0.05,
+                x: newBlocks.plane == "z" ?
+                    Math.random() * rotateRandomness - rotateRandomness / 2 :
+                    0.1,
+                z: newBlocks.plane == "x" ?
+                    Math.random() * rotateRandomness - rotateRandomness / 2 :
+                    0.1,
+                y: Math.random() * 0.1,
+            };
+            if (
+                newBlocks.chopped.position[newBlocks.plane] >
+                newBlocks.placed.position[newBlocks.plane]
+            ) {
+                positionParams[newBlocks.plane] =
+                    "+=" + 40 * Math.abs(newBlocks.direction);
+            } else {
+                positionParams[newBlocks.plane] =
+                    "-=" + 40 * Math.abs(newBlocks.direction);
+            }
+            TweenLite.to(newBlocks.chopped.position, 1, positionParams);
+            TweenLite.to(newBlocks.chopped.rotation, 1, rotationParams);
+            this.comboCount = 0;
+            this.comboDisplay.classList.add('combo-hidden');
+        } else if (newBlocks.placed) {
+            this.comboCount++;
+            this.updateComboDisplay();
+            this.soundManager.play('place');
+            this.addPerfectPlacementEffect();
+            if (this.comboCount > 1) {
+                let bonusScore = this.comboCount - 1;
+                let currentScore = this.blocks.length - 1;
+                this.scoreContainer.innerHTML = String(currentScore + bonusScore);
+            }
+        }
+        this.addBlock();
+    }
 
-	endGame() {
-		this.updateState(this.STATES.ENDED);
-		let currentScore = this.blocks.length - 2;
-		this.finalScoreContainer.innerText = currentScore;
-		if (currentScore > this.highScore) {
-			this.highScore = currentScore;
-			localStorage.setItem('highScore', this.highScore);
-			this.highScoreContainer.innerText = this.highScore;
-			this.newHighScoreElement.classList.remove('hidden');
-		} else {
-			this.newHighScoreElement.classList.add('hidden');
-		}
-		this.highScoreContainer.innerText = this.highScore;
-	}
+    updateComboDisplay() {
+        if (this.comboCount > 1) {
+            this.comboDisplay.innerText = `${this.comboCount}x Combo!`;
+            this.comboDisplay.classList.remove('combo-hidden');
+            this.comboDisplay.classList.add('combo-active');
+            setTimeout(() => {
+                this.comboDisplay.classList.remove('combo-active');
+            }, 500);
+        } else {
+            this.comboDisplay.classList.add('combo-hidden');
+        }
+    }
 
-	tick() {
-		if (this.blocks.length > 0) {
-			this.blocks[this.blocks.length - 1].tick();
-		}
-		this.stage.render();
-		requestAnimationFrame(() => {
-			this.tick();
-		});
-	}
+    addPerfectPlacementEffect() {
+        const block = this.blocks[this.blocks.length - 2];
+        const effectContainer = document.getElementById('game');
+        const particleCount = 20;
+
+        for (let i = 0; i < particleCount; i++) {
+            const particle = document.createElement('div');
+            particle.classList.add('perfect-placement-particle');
+            effectContainer.appendChild(particle);
+
+            const screenPosition = this.getScreenPosition(block.mesh.position);
+            particle.style.left = `${screenPosition.x}px`;
+            particle.style.top = `${screenPosition.y}px`;
+
+            const angle = Math.random() * Math.PI * 2;
+            const distance = Math.random() * 50 + 20;
+            const finalX = screenPosition.x + Math.cos(angle) * distance;
+            const finalY = screenPosition.y + Math.sin(angle) * distance;
+
+            setTimeout(() => {
+                particle.style.transform = `translate(${finalX - screenPosition.x}px, ${finalY - screenPosition.y}px)`;
+                particle.style.opacity = 0;
+            }, 10);
+
+            setTimeout(() => {
+                particle.remove();
+            }, 500);
+        }
+    }
+
+    getScreenPosition(position) {
+        const vector = new THREE.Vector3(position.x, position.y, position.z);
+        vector.project(this.stage.camera);
+        const screenX = (vector.x + 1) * window.innerWidth / 2;
+        const screenY = (-vector.y + 1) * window.innerHeight / 2;
+        return {
+            x: screenX,
+            y: screenY
+        };
+    }
+
+    addBlock() {
+        let lastBlock = this.blocks[this.blocks.length - 1];
+        if (lastBlock && lastBlock.state == lastBlock.STATES.MISSED) {
+            return this.endGame();
+        }
+        let score = this.blocks.length - 1;
+        this.scoreContainer.innerHTML = String(score + (this.comboCount > 1 ? this.comboCount - 1 : 0));
+        let newKidOnTheBlock = new Block(lastBlock);
+        this.newBlocks.add(newKidOnTheBlock.mesh);
+        this.blocks.push(newKidOnTheBlock);
+        this.stage.setCamera(this.blocks.length * 2);
+        if (this.blocks.length >= 5) this.instructions.classList.add("hidden");
+    }
+
+    endGame() {
+        this.updateState(this.STATES.ENDED);
+        let currentScore = this.blocks.length - 2;
+        this.finalScoreContainer.innerText = currentScore;
+        if (currentScore > this.highScore) {
+            this.highScore = currentScore;
+            localStorage.setItem('highScore', this.highScore);
+            this.highScoreContainer.innerText = this.highScore;
+            this.newHighScoreElement.classList.remove('hidden');
+        } else {
+            this.newHighScoreElement.classList.add('hidden');
+        }
+        this.highScoreContainer.innerText = this.highScore;
+        this.soundManager.play('gameOver');
+        this.comboCount = 0;
+        this.comboDisplay.classList.add('combo-hidden');
+    }
+
+    tick() {
+        if (this.blocks.length > 0) {
+            this.blocks[this.blocks.length - 1].tick();
+        }
+        this.stage.render();
+        requestAnimationFrame(() => {
+            this.tick();
+        });
+    }
 }
 
-let game = new Game();
+window.game = new Game();
